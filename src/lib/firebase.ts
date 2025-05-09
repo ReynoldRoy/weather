@@ -15,25 +15,43 @@ const fbMessagingSenderId = process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
 const fbAppId = process.env.NEXT_PUBLIC_FIREBASE_APP_ID;
 const fbMeasurementId = process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID; // Optional
 
-const essentialFirebaseConfig: Record<string, { value: string | undefined, isOptional: boolean, example?: string }> = {
-  NEXT_PUBLIC_FIREBASE_API_KEY: { value: fbApiKey, isOptional: false, example: "AIzaSy*******************" },
-  NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: { value: fbAuthDomain, isOptional: false, example: "your-project-id.firebaseapp.com" },
-  NEXT_PUBLIC_FIREBASE_PROJECT_ID: { value: fbProjectId, isOptional: false, example: "your-project-id" },
-  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: { value: fbStorageBucket, isOptional: true, example: "your-project-id.appspot.com" },
-  NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: { value: fbMessagingSenderId, isOptional: true, example: "123456789012" },
-  NEXT_PUBLIC_FIREBASE_APP_ID: { value: fbAppId, isOptional: true, example: "1:123456789012:web:abcdef1234567890abcdef" },
-  NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: { value: fbMeasurementId, isOptional: true, example: "G-ABCDEFGHIJ" },
+// Define expected Firebase config keys, whether they are optional, and clear placeholder examples.
+// These examples MUST be detectable by the isPlaceholder function if copied verbatim.
+const essentialFirebaseConfig: Record<string, { value: string | undefined, isOptional: boolean, example: string }> = {
+  NEXT_PUBLIC_FIREBASE_API_KEY: { value: fbApiKey, isOptional: false, example: "PLACEHOLDER_API_KEY_REPLACE_ME" },
+  NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: { value: fbAuthDomain, isOptional: false, example: "PLACEHOLDER_AUTH_DOMAIN_REPLACE_ME_your-project-id.firebaseapp.com" },
+  NEXT_PUBLIC_FIREBASE_PROJECT_ID: { value: fbProjectId, isOptional: false, example: "PLACEHOLDER_PROJECT_ID_REPLACE_ME" },
+  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: { value: fbStorageBucket, isOptional: true, example: "PLACEHOLDER_STORAGE_BUCKET_REPLACE_ME_your-project-id.appspot.com" },
+  NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: { value: fbMessagingSenderId, isOptional: true, example: "PLACEHOLDER_MESSAGING_SENDER_ID_REPLACE_ME_123456789012" },
+  NEXT_PUBLIC_FIREBASE_APP_ID: { value: fbAppId, isOptional: true, example: "PLACEHOLDER_APP_ID_REPLACE_ME_1:123456789012:web:abc" },
+  NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: { value: fbMeasurementId, isOptional: true, example: "PLACEHOLDER_MEASUREMENT_ID_REPLACE_ME_G-XYZ" },
 };
 
-const placeholderPrefixes = ["YOUR_", "PASTE_", "<", "ENTER_"];
-const placeholderSuffixes = ["_HERE", ">"];
-
+// Function to detect if a value is a placeholder.
 function isPlaceholder(value: string | undefined): boolean {
-  if (!value) return false;
+  if (!value || value.trim() === "") return true; // Empty or whitespace-only is a placeholder for a required field
+
   const upperValue = value.toUpperCase();
-  return placeholderPrefixes.some(prefix => upperValue.startsWith(prefix)) ||
-         placeholderSuffixes.some(suffix => upperValue.endsWith(suffix)) ||
-         value.includes("---") || value.includes("***") || value.trim() === "";
+
+  // Common placeholder markers
+  const placeholderMarkers = [
+    "PLACEHOLDER_", "_REPLACE_ME", "YOUR_", "_HERE", 
+    "PASTE_", "ENTER_", "AIzaSyFAKEAPIKEY", "your-project-id-fake",
+    "---", "***", "XXX"
+  ];
+  if (placeholderMarkers.some(marker => upperValue.includes(marker))) {
+    return true;
+  }
+
+  // Check if the value exactly matches one of the example placeholder formats.
+  // This catches cases where the user copies an example string directly from guidance.
+  for (const key in essentialFirebaseConfig) {
+    if (essentialFirebaseConfig[key].example === value) {
+      return true;
+    }
+  }
+  
+  return false;
 }
 
 const missingOrPlaceholderIssues: string[] = [];
@@ -44,15 +62,15 @@ for (const [key, config] of Object.entries(essentialFirebaseConfig)) {
 
   if (!config.isOptional) {
     if (isMissing) {
-      missingOrPlaceholderIssues.push(`- ${key} is missing or empty.`);
+      missingOrPlaceholderIssues.push(`- ${key} is MISSING or empty. It is a required Firebase credential.`);
     } else if (isActuallyPlaceholder) {
-      missingOrPlaceholderIssues.push(`- ${key} has a placeholder value: "${config.value}". Example: "${config.example}"`);
+      missingOrPlaceholderIssues.push(`- ${key} has a PLACEHOLDER value: "${config.value}". Please replace it with your actual Firebase project credential. (An example of a placeholder format is: "${config.example}")`);
     }
   } else {
-    // For optional keys, only flag if they are set to a placeholder.
-    // If they are missing/empty, that's fine for optional keys.
+    // For optional keys, only flag if they are set to an obvious placeholder.
+    // If an optional key is empty or undefined, that's fine.
     if (config.value && config.value.trim() !== "" && isActuallyPlaceholder) {
-      missingOrPlaceholderIssues.push(`- ${key} (optional) has a placeholder value: "${config.value}". Leave blank or provide a real value. Example: "${config.example}"`);
+      missingOrPlaceholderIssues.push(`- ${key} (optional) has a PLACEHOLDER value: "${config.value}". Replace with your actual credential or leave blank if not used. (An example placeholder format: "${config.example}")`);
     }
   }
 }
@@ -65,7 +83,8 @@ if (missingOrPlaceholderIssues.length > 0) {
     ####################################################################################
 
     The application cannot start due to issues with Firebase environment variables.
-    Please check your '.env.local' file (create it from '.env.local.example' if needed).
+    Please check your '.env.local' file. If it doesn't exist, create it by
+    copying '.env.local.example'.
 
     The following Firebase environment variables require attention:
     ${missingOrPlaceholderIssues.join("\n    ")}
@@ -74,7 +93,7 @@ if (missingOrPlaceholderIssues.length > 0) {
     ACTION REQUIRED:
     ------------------------------------------------------------------------------------
     1. LOCATE or CREATE the file named '.env.local' in the root of your project.
-       Use '.env.local.example' as a template.
+       If creating, use '.env.local.example' as a template.
 
     2. OPEN your '.env.local' file.
     
@@ -88,7 +107,10 @@ if (missingOrPlaceholderIssues.length > 0) {
        - If registered, click its name or find "SDK setup and configuration".
        - Choose "Config" to view the firebaseConfig object. Use these values.
 
-    4. ENSURE there are no placeholder values (e.g., "YOUR_API_KEY_HERE").
+    4. ENSURE there are NO PLACEHOLDER values (e.g., "PLACEHOLDER_API_KEY_REPLACE_ME", 
+       "YOUR_API_KEY_HERE", or the example ones like "AIzaSyFAKEAPIKEY..."). 
+       Replace them with your *actual* project credentials. The values listed
+       above as "PLACEHOLDER value" are the ones currently detected as problematic.
 
     5. SAVE the '.env.local' file.
 
@@ -100,7 +122,7 @@ if (missingOrPlaceholderIssues.length > 0) {
 
   // This error is thrown to stop execution and inform the user in the browser overlay.
   // Keep the browser message concise and direct users to the terminal.
-  throw new Error("Firebase configuration error. Critical environment variables are missing or invalid. PLEASE CHECK YOUR TERMINAL CONSOLE (where you run 'npm run dev') for detailed instructions and a list of problematic variables. Then, verify your .env.local file (created from .env.local.example) and restart the server.");
+  throw new Error("Firebase configuration error. Critical environment variables are missing or contain placeholder values. PLEASE CHECK YOUR TERMINAL CONSOLE (where you run 'npm run dev') for detailed instructions and a list of problematic variables. Then, verify your .env.local file (created from .env.local.example if needed) and restart the server.");
 }
 
 const firebaseConfig = {
