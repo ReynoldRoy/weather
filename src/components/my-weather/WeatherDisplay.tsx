@@ -4,14 +4,13 @@ import { WeatherCard } from './WeatherCard';
 import { AqiCard } from './AqiCard';
 import { HourlyForecastCard } from './HourlyForecastCard';
 import { DailyForecastCard } from './DailyForecastCard';
-import { AuthButton } from '@/components/auth/AuthButton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface WeatherDisplayProps {
   locationDetails: LocationDetails;
   currentWeatherData: CurrentWeather;
   airQualityData?: AirQuality | null;
-  forecastData: Forecast; // Added forecast data
+  forecastData: Forecast;
 }
 
 export function WeatherDisplay({ locationDetails, currentWeatherData, airQualityData, forecastData }: WeatherDisplayProps) {
@@ -25,7 +24,7 @@ export function WeatherDisplay({ locationDetails, currentWeatherData, airQuality
           <h1 className="text-4xl md:text-5xl font-bold text-primary">My Weather</h1>
           <p className="text-muted-foreground text-lg mt-2">Your personal weather and air quality assistant.</p>
         </div>
-        <AuthButton />
+        {/* AuthButton was here */}
       </header>
       
       {locationDetails && <LocationInfo city={locationDetails.name} country={locationDetails.country} />}

@@ -2,13 +2,12 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import type { Coordinates, WeatherApiResponse, LocationDetails, CurrentWeather, AirQuality, Forecast } from '@/types/weatherapi';
-import { getWeatherData } from '@/lib/weatherapi'; // Updated function name
+import { getWeatherData } from '@/lib/weatherapi';
 import { WEATHERAPI_COM_API_KEY } from '@/lib/config';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/context/AuthContext'; // Import useAuth
 
-import { WeatherDisplay } from '@/components/my-weather/WeatherDisplay'; // Renamed path
-import { LoadingState } from '@/components/my-weather/LoadingState'; // Renamed path
+import { WeatherDisplay } from '@/components/my-weather/WeatherDisplay';
+import { LoadingState } from '@/components/my-weather/LoadingState';
 
 export default function HomePage() {
   const [coords, setCoords] = useState<Coordinates | null>(null);
@@ -16,7 +15,6 @@ export default function HomePage() {
   const [loadingMessage, setLoadingMessage] = useState<string>("Initializing My Weather...");
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const { user, loading: authLoading } = useAuth(); // Get user and authLoading state
 
   const showErrorMessage = useCallback((title: string, description: string) => {
     toast({
@@ -29,8 +27,8 @@ export default function HomePage() {
 
 
   useEffect(() => {
-    if (!WEATHERAPI_COM_API_KEY || WEATHERAPI_COM_API_KEY === "YOUR_API_KEY") { // Check for placeholder
-      const apiKeyErrorMsg = "WeatherAPI.com API key is not set. Please configure it to use the app.";
+    if (!WEATHERAPI_COM_API_KEY || WEATHERAPI_COM_API_KEY === "YOUR_API_KEY" || WEATHERAPI_COM_API_KEY === "843630211a7d4bea9e774738250905_IS_A_PLACEHOLDER_REPLACE_IT") { 
+      const apiKeyErrorMsg = "WeatherAPI.com API key is not set or is a placeholder. Please configure it to use the app.";
       setLoadingMessage(apiKeyErrorMsg);
       showErrorMessage("Configuration Error", apiKeyErrorMsg + " Refer to src/lib/config.ts or console for instructions.");
       return;
@@ -69,7 +67,7 @@ export default function HomePage() {
           setLoadingMessage("Fetching weather, forecast, and air quality data...");
           setError(null);
 
-          const responseData: WeatherApiResponse = await getWeatherData(coords); // Use new function
+          const responseData: WeatherApiResponse = await getWeatherData(coords);
           setWeatherData(responseData);
           setLoadingMessage("");
 
@@ -84,11 +82,11 @@ export default function HomePage() {
     }
   }, [coords, showErrorMessage]);
 
-  if (authLoading || (loadingMessage && !weatherData && !error)) {
-    return <LoadingState message={authLoading ? "Authenticating..." : loadingMessage} />;
+  if (loadingMessage && !weatherData && !error) {
+    return <LoadingState message={loadingMessage} />;
   }
   
-  if (error && !weatherData) { // If there's an error and no weather data yet
+  if (error && !weatherData) { 
      return <LoadingState message={error} showSpinner={false} />;
   }
 
@@ -111,6 +109,5 @@ export default function HomePage() {
     );
   }
   
-  // Fallback loading state if no other condition is met (e.g. waiting for coords)
   return <LoadingState message={loadingMessage || "Waiting for location..."} />;
 }
