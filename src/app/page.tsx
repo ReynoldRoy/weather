@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import type { Coordinates, WeatherData, AqiData, LocationInfo as LocationDetails } from '@/types/openweather';
-import { getWeather, getAqi, getLocationName } from '@/lib/openweather';
-import { OPENWEATHERMAP_API_KEY } from '@/lib/config';
+import type { Coordinates, WeatherApiResponse, LocationDetails, CurrentWeather, AirQuality } from '@/types/weatherapi';
+import { getWeatherAndAqi } from '@/lib/weatherapi';
+import { WEATHERAPI_COM_API_KEY } from '@/lib/config';
 import { useToast } from '@/hooks/use-toast';
 
 import { WeatherDisplay } from '@/components/breeze-view/WeatherDisplay';
@@ -11,9 +11,10 @@ import { LoadingState } from '@/components/breeze-view/LoadingState';
 
 export default function HomePage() {
   const [coords, setCoords] = useState<Coordinates | null>(null);
-  const [locationName, setLocationName] = useState<LocationDetails | null>(null);
-  const [weather, setWeather] = useState<WeatherData | null>(null);
-  const [aqi, setAqi] = useState<AqiData | null>(null);
+  const [locationDetails, setLocationDetails] = useState<LocationDetails | null>(null);
+  const [currentWeather, setCurrentWeather] = useState<CurrentWeather | null>(null);
+  // AirQuality might be optional from API, handle it.
+  const [airQuality, setAirQuality] = useState<AirQuality | undefined | null>(null); 
   const [loadingMessage, setLoadingMessage] = useState<string>("Initializing BreezeView...");
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -24,14 +25,15 @@ export default function HomePage() {
       title: title,
       description: description,
     });
-    setError(description); // also set local error state for potentially different UI rendering
+    setError(description);
   }, [toast]);
 
 
   useEffect(() => {
-    if (!OPENWEATHERMAP_API_KEY) {
-      setLoadingMessage("API Key is missing. Please configure it to use the app.");
-      showErrorMessage("Configuration Error", "OpenWeatherMap API key is not set. Please refer to console or lib/config.ts for instructions.");
+    if (!WEATHERAPI_COM_API_KEY) {
+      const apiKeyErrorMsg = "WeatherAPI.com API key is not set. Please configure it to use the app.";
+      setLoadingMessage(apiKeyErrorMsg);
+      showErrorMessage("Configuration Error", apiKeyErrorMsg + " Refer to src/lib/config.ts or console for instructions.");
       return;
     }
 
@@ -66,22 +68,21 @@ export default function HomePage() {
       const fetchData = async () => {
         try {
           setLoadingMessage("Fetching weather and air quality data...");
-          setError(null); // Clear previous errors
+          setError(null);
 
-          const [locName, weatherData, aqiData] = await Promise.all([
-            getLocationName(coords),
-            getWeather(coords),
-            getAqi(coords),
-          ]);
+          const weatherApiResponse: WeatherApiResponse = await getWeatherAndAqi(coords);
           
-          setLocationName(locName);
-          setWeather(weatherData);
-          setAqi(aqiData);
-          setLoadingMessage(""); // Clear loading message means data is loaded
+          setLocationDetails({
+            name: weatherApiResponse.location.name,
+            country: weatherApiResponse.location.country,
+          });
+          setCurrentWeather(weatherApiResponse.current);
+          setAirQuality(weatherApiResponse.current.air_quality); // This can be undefined if API doesn't return it
+          setLoadingMessage("");
 
         } catch (err: any) {
           console.error("Error fetching data:", err);
-          const fetchErrorMsg = `Failed to fetch data: ${err.message}. Ensure your API key is valid and has relevant subscriptions.`;
+          const fetchErrorMsg = `Failed to fetch data: ${err.message}. Ensure your API key is valid and your account is active.`;
           setLoadingMessage(fetchErrorMsg);
           showErrorMessage("Data Fetch Error", fetchErrorMsg);
         }
@@ -90,19 +91,17 @@ export default function HomePage() {
     }
   }, [coords, showErrorMessage]);
 
-  if (loadingMessage && !weather && !error) { // Show loading state if message exists, no data yet, and no critical error displayed by toast already
+  if (loadingMessage && !currentWeather && !error) {
     return <LoadingState message={loadingMessage} />;
   }
   
-  if (error && !weather) { // Show error / prompt if there was an error and no weather data loaded
+  if (error && !currentWeather) {
      return <LoadingState message={error} showSpinner={false} />;
   }
 
-  if (locationName && weather && aqi) {
-    return <WeatherDisplay locationName={locationName} weatherData={weather} aqiData={aqi} />;
+  if (locationDetails && currentWeather) { // AQI is optional, so don't gate on it for main display
+    return <WeatherDisplay locationDetails={locationDetails} currentWeatherData={currentWeather} airQualityData={airQuality} />;
   }
   
-  // Fallback for initial state or unhandled intermediate states, though LoadingState should cover most.
-  // This usually means geolocation is pending or an early error occurred.
   return <LoadingState message={loadingMessage || "Initializing..."} />;
 }
