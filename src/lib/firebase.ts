@@ -36,8 +36,8 @@ function isPlaceholder(value: string | undefined): boolean {
   // Common placeholder markers
   const placeholderMarkers = [
     "PLACEHOLDER_", "_REPLACE_ME", "YOUR_", "_HERE", 
-    "PASTE_", "ENTER_", "AIzaSyFAKEAPIKEY", "your-project-id-fake",
-    "---", "***", "XXX"
+    "PASTE_", "ENTER_", "AIzaSyFAKEAPIKEY", "your-project-id-fake", // Common generic placeholders
+    "---", "***", "XXX" // Other common markers
   ];
   if (placeholderMarkers.some(marker => upperValue.includes(marker))) {
     return true;
@@ -83,8 +83,8 @@ if (missingOrPlaceholderIssues.length > 0) {
     ####################################################################################
 
     The application cannot start due to issues with Firebase environment variables.
-    Please check your '.env.local' file. If it doesn't exist, create it by
-    copying '.env.local.example'.
+    This usually means your '.env.local' file is missing, incomplete, or contains
+    placeholder values that need to be replaced with your actual Firebase credentials.
 
     The following Firebase environment variables require attention:
     ${missingOrPlaceholderIssues.join("\n    ")}
@@ -93,22 +93,24 @@ if (missingOrPlaceholderIssues.length > 0) {
     ACTION REQUIRED:
     ------------------------------------------------------------------------------------
     1. LOCATE or CREATE the file named '.env.local' in the root of your project.
-       If creating, use '.env.local.example' as a template.
+       If it does not exist, create it by copying the '.env.local.example' file 
+       (which should also be in the root of your project).
 
     2. OPEN your '.env.local' file.
     
-    3. FILL IN the CORRECT values for the Firebase variables listed above.
-       You can find these credentials in your Firebase project console:
+    3. FILL IN the CORRECT values for the Firebase variables listed above using
+       the credentials from your Firebase project console:
        - Go to your Firebase project: https://console.firebase.google.com/
        - Select your project.
        - In the left sidebar, click on "Project settings" (the gear icon).
        - In the "General" tab, scroll down to the "Your apps" section.
        - If you haven't registered your web app, click "Add app" and choose web (</>).
        - If registered, click its name or find "SDK setup and configuration".
-       - Choose "Config" to view the firebaseConfig object. Use these values.
+       - Choose "Config" to view the firebaseConfig object. Use these values for
+         the corresponding NEXT_PUBLIC_FIREBASE_... variables in your '.env.local'.
 
     4. ENSURE there are NO PLACEHOLDER values (e.g., "PLACEHOLDER_API_KEY_REPLACE_ME", 
-       "YOUR_API_KEY_HERE", or the example ones like "AIzaSyFAKEAPIKEY..."). 
+       "YOUR_API_KEY_HERE", or the example values like "AIzaSyFAKEAPIKEY..."). 
        Replace them with your *actual* project credentials. The values listed
        above as "PLACEHOLDER value" are the ones currently detected as problematic.
 
